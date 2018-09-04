@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"encoding"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -20,9 +21,23 @@ func Mock(v interface{}) (interface{}, error) {
 	return ret.Interface(), nil
 }
 
+var typTextUnmarshaler = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
+
 func mock(tag string, val reflect.Value) (reflect.Value, error) {
 	typ := val.Type()
+
+	if typ.Implements(typTextUnmarshaler) {
+		if val.IsNil() {
+			return mock(tag, reflect.New(typ.Elem()))
+		}
+		err := assignImplements(tag, val)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		return val, nil
+	}
 	kind := val.Kind()
+
 	switch kind {
 	case reflect.Ptr:
 		if val.IsNil() {
@@ -75,11 +90,11 @@ func mock(tag string, val reflect.Value) (reflect.Value, error) {
 			if tagVal == "" {
 				continue
 			}
-			data, err := mock(tagVal, v)
+			data, err := mock(tagVal, v.Addr())
 			if err != nil {
 				return reflect.Value{}, err
 			}
-			newVal.Field(i).Set(data)
+			newVal.Field(i).Set(data.Elem())
 		}
 		return newVal, nil
 	case reflect.Array:
@@ -87,11 +102,11 @@ func mock(tag string, val reflect.Value) (reflect.Value, error) {
 		num := val.Len()
 		for i := 0; i != num; i++ {
 			v := val.Index(i)
-			data, err := mock(tag, v)
+			data, err := mock(tag, v.Addr())
 			if err != nil {
 				return reflect.Value{}, err
 			}
-			newVal.Index(i).Set(data)
+			newVal.Index(i).Set(data.Elem())
 		}
 		return newVal, nil
 	case reflect.Slice:
@@ -99,19 +114,28 @@ func mock(tag string, val reflect.Value) (reflect.Value, error) {
 		newVal := reflect.MakeSlice(typ, num, val.Cap())
 		for i := 0; i != num; i++ {
 			v := val.Index(i)
-			data, err := mock(tag, v)
+			data, err := mock(tag, v.Addr())
 			if err != nil {
 				return reflect.Value{}, err
 			}
-			newVal.Index(i).Set(data)
+			newVal.Index(i).Set(data.Elem())
 		}
 		return newVal, nil
 	}
 	return reflect.Value{}, fmt.Errorf("Error: There are unsupported kinds: %s", kind.String())
 }
 
-func assignString(tag string, val reflect.Value) error {
+func assignImplements(tag string, val reflect.Value) error {
+	reg, err := crun.Compile(tag)
+	if err != nil {
+		return err
+	}
+	ret := reg.Rand()
+	v, _ := val.Interface().(encoding.TextUnmarshaler)
+	return v.UnmarshalText([]byte(ret))
+}
 
+func assignString(tag string, val reflect.Value) error {
 	reg, err := crun.Compile(tag)
 	if err != nil {
 		return err
