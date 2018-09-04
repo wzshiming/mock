@@ -52,7 +52,7 @@ const (
 	_url       = `(` + _protocol + `://` + _domain + `(` + _path + `(\?` + _args + `)?)?)`
 	_email     = `(` + _randData + `@` + _domain + `)`
 	_hex       = `([0-9a-f])`
-	_word      = `([a-z]{2,10}|` + _protocol + `|` + _topDomain + `|` + _firstName + `|` + _lastName + `)`
+	_word      = `([a-z]{2,10}|` + _protocol + `|` + _topDomain + `)`
 	_number    = `([1-9][0-9]{0,8})`
 	_uuid      = `(` + _hex + `{8}(-` + _hex + `{4}){3}-` + _hex + `{12})`
 	_randData  = `(` + _word + `|` + _number + `)`
