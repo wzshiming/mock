@@ -6,14 +6,24 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/wzshiming/crun"
 )
 
 const (
-	tagFlag       = "mock"
-	keyRangeFlag  = "range"
-	keyRegexpFlag = "regexp"
+	tagFlag         = "mock"
+	keyRangeFlag    = "range"
+	keyRegexpFlag   = "regexp"
+	keyProtocolFlag = "protocol"
+	keyDomainFlag   = "domain"
+	keyURLFlag      = "url"
+	keyEmailFlag    = "email"
+	keyUUIDFlag     = "uuid"
+	keyNameFlag     = "name"
+	keyIPv4Flag     = "ipv4"
+	keyIPv6Flag     = "ipv6"
+	keyTimeFlag     = "time"
 )
 
 // Mock Inject mock data into the structure
@@ -130,11 +140,11 @@ func mock(tag string, val reflect.Value) (reflect.Value, error) {
 }
 
 func assignImplements(tag string, val reflect.Value) error {
-	reg, err := crun.Compile(tag)
+	ret, err := tagString(tag)
 	if err != nil {
 		return err
 	}
-	ret := reg.Rand()
+
 	v, _ := val.Interface().(encoding.TextUnmarshaler)
 	return v.UnmarshalText([]byte(ret))
 }
@@ -148,25 +158,47 @@ func randString(tag string) (string, error) {
 	return ret, nil
 }
 
-func assignString(tag string, val reflect.Value) error {
+func tagString(tag string) (string, error) {
 	data := strings.SplitN(tag, ",", 2)
 	method := data[0]
 	data = data[1:]
 	switch method {
 	case keyRegexpFlag:
 		if len(data) == 0 {
-			return nil
+			return "", nil
 		}
 		tag = data[0]
-		ret, err := randString(tag)
-		if err != nil {
-			return err
-		}
-		val.SetString(ret)
+		return randString(tag)
+	case keyProtocolFlag:
+		return protocol.Rand(), nil
+	case keyDomainFlag:
+		return domain.Rand(), nil
+	case keyURLFlag:
+		return url.Rand(), nil
+	case keyEmailFlag:
+		return email.Rand(), nil
+	case keyUUIDFlag:
+		return uuid.Rand(), nil
+	case keyNameFlag:
+		return name.Rand(), nil
+	case keyIPv4Flag:
+		return RandIPv4(), nil
+	case keyIPv6Flag:
+		return RandIPv6(), nil
+	case keyTimeFlag:
+		return RandTime(time.RFC3339), nil
 	case keyRangeFlag:
 		// No action
 	}
+	return "", nil
+}
 
+func assignString(tag string, val reflect.Value) error {
+	ret, err := tagString(tag)
+	if err != nil {
+		return err
+	}
+	val.SetString(ret)
 	return nil
 }
 
