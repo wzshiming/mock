@@ -10,7 +10,11 @@ import (
 	"github.com/wzshiming/crun"
 )
 
-const tagFlag = "mock"
+const (
+	tagFlag       = "mock"
+	keyRangeFlag  = "range"
+	keyRegexpFlag = "regexp"
+)
 
 // Mock Inject mock data into the structure
 func Mock(v interface{}) (interface{}, error) {
@@ -135,13 +139,34 @@ func assignImplements(tag string, val reflect.Value) error {
 	return v.UnmarshalText([]byte(ret))
 }
 
-func assignString(tag string, val reflect.Value) error {
+func randString(tag string) (string, error) {
 	reg, err := crun.Compile(tag)
 	if err != nil {
-		return err
+		return "", err
 	}
 	ret := reg.Rand()
-	val.SetString(ret)
+	return ret, nil
+}
+
+func assignString(tag string, val reflect.Value) error {
+	data := strings.SplitN(tag, ",", 2)
+	method := data[0]
+	data = data[1:]
+	switch method {
+	case keyRegexpFlag:
+		if len(data) == 0 {
+			return nil
+		}
+		tag = data[0]
+		ret, err := randString(tag)
+		if err != nil {
+			return err
+		}
+		val.SetString(ret)
+	case keyRangeFlag:
+		// No action
+	}
+
 	return nil
 }
 
@@ -149,34 +174,56 @@ func assignFloat(tag string, bits int, val reflect.Value) error {
 	min := minFloat(bits)
 	max := maxFloat(bits)
 	data := strings.Split(tag, ",")
-	dataFloat := make([]float64, 0, len(data))
-	for _, v := range data {
-		d, err := strconv.ParseFloat(v, bits)
+	method := data[0]
+	data = data[1:]
+	switch method {
+	case keyRegexpFlag:
+		if len(data) == 0 {
+			return nil
+		}
+		tag = data[0]
+		d, err := randString(tag)
 		if err != nil {
 			return err
 		}
-		dataFloat = append(dataFloat, d)
-	}
+		ret, err := strconv.ParseFloat(d, bits)
+		if err != nil {
+			return err
+		}
+		val.SetFloat(ret)
+	case keyRangeFlag:
+		dataFloat := make([]float64, 0, len(data))
+		for _, v := range data {
+			d, err := strconv.ParseFloat(v, bits)
+			if err != nil {
+				return err
+			}
+			dataFloat = append(dataFloat, d)
+		}
 
-	var ret float64
-	switch len(dataFloat) {
-	case 1:
-		max, _ = compareFloat(dataFloat[0], max)
-		ret = RandFloat(0, max)
-	case 2:
-		min0, max0 := compareFloat(dataFloat[0], dataFloat[1])
-		_, min = compareFloat(max0, min)
-		max, _ = compareFloat(min0, max)
-		ret = RandFloat(min, max)
-	case 3:
-		min0, max0 := compareFloat(dataFloat[0], dataFloat[1])
-		_, min = compareFloat(max0, min)
-		max, _ = compareFloat(min0, max)
-		ret = RandFloatStep(min, max, dataFloat[2])
-	default:
-		return fmt.Errorf("Error: wrong number of arguments:%s", tag)
+		var ret float64
+		switch len(dataFloat) {
+		case 0:
+			ret = RandFloat(0, 1)
+		case 1:
+			max, _ = compareFloat(dataFloat[0], max)
+			ret = RandFloat(0, max)
+		case 2:
+			min0, max0 := compareFloat(dataFloat[0], dataFloat[1])
+			_, min = compareFloat(max0, min)
+			max, _ = compareFloat(min0, max)
+			ret = RandFloat(min, max)
+		case 3:
+			min0, max0 := compareFloat(dataFloat[0], dataFloat[1])
+			_, min = compareFloat(max0, min)
+			max, _ = compareFloat(min0, max)
+			ret = RandFloatStep(min, max, dataFloat[2])
+		default:
+			return fmt.Errorf("Error: wrong number of arguments:%s", tag)
+		}
+		val.SetFloat(ret)
+
 	}
-	val.SetFloat(ret)
 	return nil
 }
 
@@ -184,34 +231,55 @@ func assignInt(tag string, bits int, val reflect.Value) error {
 	min := minInt(bits)
 	max := maxInt(bits)
 	data := strings.Split(tag, ",")
-	dataInt := make([]int64, 0, len(data))
-	for _, v := range data {
-		d, err := strconv.ParseInt(v, 0, 0)
+	method := data[0]
+	data = data[1:]
+	switch method {
+	case keyRegexpFlag:
+		if len(data) == 0 {
+			return nil
+		}
+		tag = data[0]
+		d, err := randString(tag)
 		if err != nil {
 			return err
 		}
-		dataInt = append(dataInt, d)
-	}
+		ret, err := strconv.ParseInt(d, 0, 0)
+		if err != nil {
+			return err
+		}
+		val.SetInt(ret)
+	case keyRangeFlag:
+		dataInt := make([]int64, 0, len(data))
+		for _, v := range data {
+			d, err := strconv.ParseInt(v, 0, 0)
+			if err != nil {
+				return err
+			}
+			dataInt = append(dataInt, d)
+		}
 
-	var ret int64
-	switch len(dataInt) {
-	case 1:
-		max, _ = compareInt(dataInt[0], max)
-		ret = RandInt(0, max)
-	case 2:
-		min0, max0 := compareInt(dataInt[0], dataInt[1])
-		_, min = compareInt(min0, min)
-		max, _ = compareInt(max0, max)
-		ret = RandInt(min, max)
-	case 3:
-		min0, max0 := compareInt(dataInt[0], dataInt[1])
-		_, min = compareInt(min0, min)
-		max, _ = compareInt(max0, max)
-		ret = RandIntStep(min, max, dataInt[2])
-	default:
-		return fmt.Errorf("Error: wrong number of arguments:%s", tag)
+		var ret int64
+		switch len(dataInt) {
+		case 0:
+			ret = RandInt(0, max)
+		case 1:
+			max, _ = compareInt(dataInt[0], max)
+			ret = RandInt(0, max)
+		case 2:
+			min0, max0 := compareInt(dataInt[0], dataInt[1])
+			_, min = compareInt(min0, min)
+			max, _ = compareInt(max0, max)
+			ret = RandInt(min, max)
+		case 3:
+			min0, max0 := compareInt(dataInt[0], dataInt[1])
+			_, min = compareInt(min0, min)
+			max, _ = compareInt(max0, max)
+			ret = RandIntStep(min, max, dataInt[2])
+		default:
+			return fmt.Errorf("Error: wrong number of arguments:%s", tag)
+		}
+		val.SetInt(ret)
 	}
-	val.SetInt(ret)
 	return nil
 }
 
@@ -219,32 +287,53 @@ func assignUint(tag string, bits int, val reflect.Value) error {
 	max := maxUint(bits)
 	var min uint64
 	data := strings.Split(tag, ",")
-	dataUint := make([]uint64, 0, len(data))
-	for _, v := range data {
-		d, err := strconv.ParseUint(v, 0, 0)
+	method := data[0]
+	data = data[1:]
+	switch method {
+	case keyRegexpFlag:
+		if len(data) == 0 {
+			return nil
+		}
+		tag = data[0]
+		d, err := randString(tag)
 		if err != nil {
 			return err
 		}
-		dataUint = append(dataUint, d)
-	}
+		ret, err := strconv.ParseUint(d, 0, 0)
+		if err != nil {
+			return err
+		}
+		val.SetUint(ret)
+	case keyRangeFlag:
+		dataUint := make([]uint64, 0, len(data))
+		for _, v := range data {
+			d, err := strconv.ParseUint(v, 0, 0)
+			if err != nil {
+				return err
+			}
+			dataUint = append(dataUint, d)
+		}
 
-	var ret uint64
-	switch len(dataUint) {
-	case 1:
-		max, _ = compareUint(dataUint[0], max)
-		ret = RandUint(0, max)
-	case 2:
-		min0, max0 := compareUint(dataUint[0], dataUint[1])
-		_, min = compareUint(min0, min)
-		max, _ = compareUint(max0, max)
-		ret = RandUint(min, max)
-	case 3:
-		_, min = compareUint(dataUint[0], min)
-		max, _ = compareUint(dataUint[1], max)
-		ret = RandUintStep(min, max, dataUint[2])
-	default:
-		return fmt.Errorf("Error: wrong number of arguments:%s", tag)
+		var ret uint64
+		switch len(dataUint) {
+		case 0:
+			ret = RandUint(0, max)
+		case 1:
+			max, _ = compareUint(dataUint[0], max)
+			ret = RandUint(0, max)
+		case 2:
+			min0, max0 := compareUint(dataUint[0], dataUint[1])
+			_, min = compareUint(min0, min)
+			max, _ = compareUint(max0, max)
+			ret = RandUint(min, max)
+		case 3:
+			_, min = compareUint(dataUint[0], min)
+			max, _ = compareUint(dataUint[1], max)
+			ret = RandUintStep(min, max, dataUint[2])
+		default:
+			return fmt.Errorf("Error: wrong number of arguments:%s", tag)
+		}
+		val.SetUint(ret)
 	}
-	val.SetUint(ret)
 	return nil
 }
