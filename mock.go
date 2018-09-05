@@ -12,18 +12,19 @@ import (
 )
 
 const (
-	tagFlag         = "mock"
-	keyRangeFlag    = "range"
-	keyRegexpFlag   = "regexp"
-	keyProtocolFlag = "protocol"
-	keyDomainFlag   = "domain"
-	keyURLFlag      = "url"
-	keyEmailFlag    = "email"
-	keyUUIDFlag     = "uuid"
-	keyNameFlag     = "name"
-	keyIPv4Flag     = "ipv4"
-	keyIPv6Flag     = "ipv6"
-	keyTimeFlag     = "time"
+	tagFlag       = "mock"
+	keyRangeFlag  = "range"
+	keyRegexpFlag = "regexp"
+	keyDomainFlag = "domain"
+	keyURLFlag    = "url"
+	keyEmailFlag  = "email"
+	keyUUIDFlag   = "uuid"
+	keyNameFlag   = "name"
+	keyIPv4Flag   = "ipv4"
+	keyIPv6Flag   = "ipv6"
+	keyTimeFlag   = "time"
+	keyWordFlag   = "word"
+	keyTextFlag   = "text"
 )
 
 // Mock Inject mock data into the structure
@@ -169,18 +170,20 @@ func tagString(tag string) (string, error) {
 		}
 		tag = data[0]
 		return randString(tag)
-	case keyProtocolFlag:
-		return protocol.Rand(), nil
 	case keyDomainFlag:
-		return domain.Rand(), nil
+		return RandDomain(), nil
 	case keyURLFlag:
-		return url.Rand(), nil
+		return RandURL(), nil
 	case keyEmailFlag:
-		return email.Rand(), nil
+		return RandEmail(), nil
 	case keyUUIDFlag:
-		return uuid.Rand(), nil
+		return RandUUID(), nil
 	case keyNameFlag:
-		return name.Rand(), nil
+		return RandName(), nil
+	case keyWordFlag:
+		return RandWord(), nil
+	case keyTextFlag:
+		return RandText(), nil
 	case keyIPv4Flag:
 		return RandIPv4(), nil
 	case keyIPv6Flag:
