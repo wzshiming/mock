@@ -193,7 +193,7 @@ func tagString(tag string) (string, error) {
 	case keyRangeFlag:
 		// No action
 	}
-	return "", nil
+	return "", fmt.Errorf("Error: There are unsupported tag: %s", tag)
 }
 
 func assignString(tag string, val reflect.Value) error {
@@ -226,6 +226,7 @@ func assignFloat(tag string, bits int, val reflect.Value) error {
 			return err
 		}
 		val.SetFloat(ret)
+		return nil
 	case keyRangeFlag:
 		dataFloat := make([]float64, 0, len(data))
 		for _, v := range data {
@@ -257,9 +258,9 @@ func assignFloat(tag string, bits int, val reflect.Value) error {
 			return fmt.Errorf("Error: wrong number of arguments:%s", tag)
 		}
 		val.SetFloat(ret)
-
+		return nil
 	}
-	return nil
+	return fmt.Errorf("Error: There are unsupported tag: %s", tag)
 }
 
 func assignInt(tag string, bits int, val reflect.Value) error {
@@ -283,6 +284,7 @@ func assignInt(tag string, bits int, val reflect.Value) error {
 			return err
 		}
 		val.SetInt(ret)
+		return nil
 	case keyRangeFlag:
 		dataInt := make([]int64, 0, len(data))
 		for _, v := range data {
@@ -314,8 +316,9 @@ func assignInt(tag string, bits int, val reflect.Value) error {
 			return fmt.Errorf("Error: wrong number of arguments:%s", tag)
 		}
 		val.SetInt(ret)
+		return nil
 	}
-	return nil
+	return fmt.Errorf("Error: There are unsupported tag: %s", tag)
 }
 
 func assignUint(tag string, bits int, val reflect.Value) error {
@@ -339,6 +342,7 @@ func assignUint(tag string, bits int, val reflect.Value) error {
 			return err
 		}
 		val.SetUint(ret)
+		return nil
 	case keyRangeFlag:
 		dataUint := make([]uint64, 0, len(data))
 		for _, v := range data {
@@ -369,6 +373,7 @@ func assignUint(tag string, bits int, val reflect.Value) error {
 			return fmt.Errorf("Error: wrong number of arguments:%s", tag)
 		}
 		val.SetUint(ret)
+		return nil
 	}
-	return nil
+	return fmt.Errorf("Error: There are unsupported tag: %s", tag)
 }

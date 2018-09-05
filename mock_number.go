@@ -3,8 +3,6 @@ package mock
 import (
 	"math"
 	"math/rand"
-
-	"gopkg.in/ffmt.v1"
 )
 
 // RandInt Returns an int64 between min and max.
@@ -49,7 +47,6 @@ func RandFloatStep(min, max, step float64) float64 {
 	off := min
 	sub := max - min
 	size := int64(sub / step)
-	ffmt.Mark(min, max, step, sub, size)
 	return float64(rand.Int63()%size)*step + off
 }
 
