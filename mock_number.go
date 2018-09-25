@@ -1,15 +1,16 @@
 package mock
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"math"
-	"math/rand"
 )
 
 // RandInt Returns an int64 between min and max.
 func RandInt(min, max int64) int64 {
 	off := min
 	size := max - min
-	return rand.Int63()%size + off
+	return int64(randUint64()%uint64(size)) + off
 }
 
 // RandIntStep Returns an int64 whose step distance between min and max is step.
@@ -17,14 +18,14 @@ func RandIntStep(min, max, step int64) int64 {
 	off := min
 	sub := max - min
 	size := sub / step
-	return (rand.Int63()%size)*step + off
+	return int64(randUint64()%uint64(size))*step + off
 }
 
 // RandUint Returns an uint64 between min and max.
 func RandUint(min, max uint64) uint64 {
 	off := min
 	size := max - min
-	return rand.Uint64()%size + off
+	return randUint64()%size + off
 }
 
 // RandUintStep Returns an uint64 whose step distance between min and max is step.
@@ -32,14 +33,14 @@ func RandUintStep(min, max, step uint64) uint64 {
 	off := min
 	sub := max - min
 	size := sub / step
-	return (rand.Uint64()%size)*step + off
+	return (randUint64()%size)*step + off
 }
 
 // RandFloat Returns an float64 between min and max.
 func RandFloat(min, max float64) float64 {
 	off := min
 	size := max - min
-	return rand.Float64()*size + off
+	return randFloat64()*size + off
 }
 
 // RandFloatStep Returns an float64 whose step distance between min and max is step.
@@ -47,7 +48,21 @@ func RandFloatStep(min, max, step float64) float64 {
 	off := min
 	sub := max - min
 	size := int64(sub / step)
-	return float64(rand.Int63()%size)*step + off
+	return float64(randUint64()%uint64(size))*step + off
+}
+
+func randUint64() uint64 {
+	var buf [8]byte
+	rand.Read(buf[:])
+	return binary.BigEndian.Uint64(buf[:])
+}
+
+func randFloat64() float64 {
+	f := float64(randUint64()>>1) / (1 << 63)
+	if f == 1 {
+		return randFloat64()
+	}
+	return f
 }
 
 func compareInt(a, b int64) (min, max int64) {
