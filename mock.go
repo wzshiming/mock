@@ -29,7 +29,12 @@ const (
 
 // Mock Inject mock data into the structure
 func Mock(v interface{}) (interface{}, error) {
-	ret, err := mock("", reflect.ValueOf(v))
+	return MockTag(v, "")
+}
+
+// MockTag Inject mock data into the structure by tag
+func MockTag(v interface{}, tag string) (interface{}, error) {
+	ret, err := mock(tag, reflect.ValueOf(v))
 	if err != nil {
 		return nil, err
 	}
